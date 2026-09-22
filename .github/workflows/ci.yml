@@ -21,7 +21,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential clang llvm python3-pip cmake
-          pip install --user lit
+          pip install --user --break-system-packages lit
+          echo "$(dirname "$(find /usr/lib/llvm-*/bin -name FileCheck | head -n1)")" >> "$GITHUB_PATH"
 
       - name: Build decoder
         run: make CXX=${{ matrix.compiler }} all
