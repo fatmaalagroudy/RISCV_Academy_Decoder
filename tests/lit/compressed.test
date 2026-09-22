@@ -1,0 +1,5 @@
+RUN: %decoder %S/Inputs/compressed_rv32.elf | FileCheck %s
+
+CHECK: Disassembly of section .text:
+CHECK: c.li  a0, 1
+CHECK-NEXT: addi  a0, a0, 1

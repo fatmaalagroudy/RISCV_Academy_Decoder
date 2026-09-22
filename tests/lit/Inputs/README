@@ -1,0 +1,22 @@
+# Regenerating test ELFs
+
+These binaries are synthetic RISC-V ELFs (no GNU toolchain required).
+
+```
+python3 tests/lit/Inputs/gen_elfs.py
+```
+
+Equivalent hand-written sequences:
+
+- `hello_rv32.elf` / `hello_rv64.elf` (addr `0x10094`):
+  - `addi sp, sp, -16`
+  - `sw ra, 12(sp)`
+  - RV64 only: `addiw a0, a0, 0` then `ld a0, 0(sp)`
+- `branches_rv64.elf`: `beq` / `bne` / `jal` / `jalr`
+- `compressed_rv32.elf`: `c.li a0, 1` then `addi a0, a0, 1`
+
+If a real `riscv64-unknown-elf-gcc` is available, an equivalent source would be:
+
+```
+riscv64-unknown-elf-gcc -march=rv64i -mabi=lp64 -nostdlib -o hello_rv64.elf snippet.s
+```

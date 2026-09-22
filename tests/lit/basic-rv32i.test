@@ -1,0 +1,5 @@
+RUN: %decoder %S/Inputs/hello_rv32.elf | FileCheck %s
+
+CHECK: Disassembly of section .text:
+CHECK: addi  sp, sp, -16
+CHECK-NEXT: sw    ra, 12(sp)

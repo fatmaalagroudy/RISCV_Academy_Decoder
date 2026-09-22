@@ -1,0 +1,3 @@
+# Auto-generated site config placeholder. LIT uses lit.cfg.py defaults
+# when this file is unused. CI sets DECODER_BIN instead.
+config.my_obj_root = config.test_source_root

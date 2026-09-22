@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [g++, clang++]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install toolchain and test deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang llvm python3-pip cmake
+          pip install --user lit
+
+      - name: Build decoder
+        run: make CXX=${{ matrix.compiler }} all
+
+      - name: Build unit tests
+        run: make -C tests/unit CXX=${{ matrix.compiler }}
+
+      - name: Run unit tests
+        run: ./tests/unit/build/unit_tests --gtest_color=yes
+
+      - name: Run LIT regression tests
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          DECODER_BIN=$GITHUB_WORKSPACE/build/decoder lit -v tests/lit
+
+      - name: Upload decoder binary
+        if: matrix.compiler == 'g++'
+        uses: actions/upload-artifact@v4
+        with:
+          name: decoder-binary
+          path: build/decoder
