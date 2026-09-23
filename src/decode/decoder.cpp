@@ -90,6 +90,26 @@ DecodedInstruction Make(uint64_t addr, uint32_t raw, uint8_t len, Format fmt,
   return insn;
 }
 
+// Same as Make(), but also records the statically-known absolute target
+// address of a jal/branch/compressed jump-branch instruction so the
+// disassembler can annotate it with a symbol name.
+DecodedInstruction MakeBranch(uint64_t addr, uint32_t raw, uint8_t len, Format fmt,
+                               const std::string& mnem, const std::string& ops,
+                               uint64_t target) {
+  DecodedInstruction insn = Make(addr, raw, len, fmt, mnem, ops);
+  insn.has_target = true;
+  insn.target_address = target;
+  return insn;
+}
+
+// Bare lowercase hex, no "0x" prefix and no zero-padding (e.g. "1014c"),
+// matching how objdump prints branch/jump targets.
+std::string HexAddr(uint64_t v) {
+  std::ostringstream oss;
+  oss << std::hex << v;
+  return oss.str();
+}
+
 DecodedInstruction Invalid(uint64_t addr, uint32_t raw, uint8_t len) {
   DecodedInstruction insn;
   insn.address = addr;
@@ -149,8 +169,11 @@ DecodedInstruction Decoder::Decode32(uint32_t word, uint64_t vaddr) const {
     return Make(vaddr, word, 4, Format::kU, "lui", std::string(Reg(rd)) + ", " + HexU(ImmU(word)));
   case kOpAuipc:
     return Make(vaddr, word, 4, Format::kU, "auipc", std::string(Reg(rd)) + ", " + HexU(ImmU(word)));
-  case kOpJal:
-    return Make(vaddr, word, 4, Format::kJ, "jal", std::string(Reg(rd)) + ", " + Dec(ImmJ(word)));
+  case kOpJal: {
+    const uint64_t target = vaddr + static_cast<uint64_t>(static_cast<int64_t>(ImmJ(word)));
+    return MakeBranch(vaddr, word, 4, Format::kJ, "jal", std::string(Reg(rd)) + ", " + HexAddr(target),
+                       target);
+  }
   case kOpJalr:
     if (f3 != 0) {
       return Invalid(vaddr, word, 4);
@@ -180,8 +203,9 @@ DecodedInstruction Decoder::Decode32(uint32_t word, uint64_t vaddr) const {
     default:
       return Invalid(vaddr, word, 4);
     }
-    return Make(vaddr, word, 4, Format::kB, mnem,
-                std::string(Reg(rs1)) + ", " + Reg(rs2) + ", " + Dec(ImmB(word)));
+    const uint64_t target = vaddr + static_cast<uint64_t>(static_cast<int64_t>(ImmB(word)));
+    return MakeBranch(vaddr, word, 4, Format::kB, mnem,
+                       std::string(Reg(rs1)) + ", " + Reg(rs2) + ", " + HexAddr(target), target);
   }
   case kOpLoad: {
     const char* mnem = nullptr;
@@ -569,8 +593,9 @@ DecodedInstruction Decoder::DecodeCompressed(uint16_t word, uint64_t vaddr) cons
                              (((word >> 9) & 3) << 8) | (((word >> 6) & 1) << 7) |
                              (((word >> 7) & 1) << 6) | (((word >> 2) & 1) << 5) |
                              (((word >> 11) & 1) << 4) | (((word >> 3) & 7) << 1);
-        return Make(vaddr, word, 2, Format::kCJ, "c.jal",
-                    Dec(static_cast<int32_t>(SignExtend(off, 12))));
+        const uint64_t target =
+            vaddr + static_cast<uint64_t>(static_cast<int64_t>(SignExtend(off, 12)));
+        return MakeBranch(vaddr, word, 2, Format::kCJ, "c.jal", HexAddr(target), target);
       }
     case 2: {  // c.li
       if (rd == 0) {
@@ -652,15 +677,17 @@ DecodedInstruction Decoder::DecodeCompressed(uint16_t word, uint64_t vaddr) cons
                            (((word >> 9) & 3) << 8) | (((word >> 6) & 1) << 7) |
                            (((word >> 7) & 1) << 6) | (((word >> 2) & 1) << 5) |
                            (((word >> 11) & 1) << 4) | (((word >> 3) & 7) << 1);
-      return Make(vaddr, word, 2, Format::kCJ, "c.j", Dec(static_cast<int32_t>(SignExtend(off, 12))));
+      const uint64_t target = vaddr + static_cast<uint64_t>(static_cast<int64_t>(SignExtend(off, 12)));
+      return MakeBranch(vaddr, word, 2, Format::kCJ, "c.j", HexAddr(target), target);
     }
     case 6:
     case 7: {  // c.beqz / c.bnez
       const uint32_t off = (((word >> 12) & 1) << 8) | (((word >> 10) & 3) << 3) |
                            (((word >> 5) & 3) << 6) | (((word >> 3) & 3) << 1) |
                            (((word >> 2) & 1) << 5);
-      return Make(vaddr, word, 2, Format::kCB, f3 == 6 ? "c.beqz" : "c.bnez",
-                  std::string(CReg(rs1p)) + ", " + Dec(static_cast<int32_t>(SignExtend(off, 9))));
+      const uint64_t target = vaddr + static_cast<uint64_t>(static_cast<int64_t>(SignExtend(off, 9)));
+      return MakeBranch(vaddr, word, 2, Format::kCB, f3 == 6 ? "c.beqz" : "c.bnez",
+                         std::string(CReg(rs1p)) + ", " + HexAddr(target), target);
     }
     default:
       return Invalid(vaddr, word, 2);

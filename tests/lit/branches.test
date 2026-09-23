@@ -1,7 +1,7 @@
 RUN: %decoder %S/Inputs/branches_rv64.elf | FileCheck %s
 
 CHECK: Disassembly of section .text:
-CHECK: beq   a0, a1, 8
-CHECK-NEXT: bne   a0, zero, 4
-CHECK-NEXT: jal   ra, 16
+CHECK: beq   a0, a1, 1009c
+CHECK-NEXT: bne   a0, zero, 1009c
+CHECK-NEXT: jal   ra, 100ac
 CHECK-NEXT: jalr  zero, 0(ra)

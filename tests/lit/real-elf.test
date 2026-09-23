@@ -1,0 +1,13 @@
+; Regression test against a real, GCC-compiled RISC-V ELF (not a
+; hand-assembled synthetic one). See examples/main.c for the source and
+; examples/README.md for the exact compiler invocation used to produce
+; Inputs/real_main_rv64.elf. The binary keeps its symbol table (built
+; without -s), so this also exercises objdump-style symbol annotation on
+; branch and jal targets.
+RUN: %decoder %S/Inputs/real_main_rv64.elf | FileCheck %s
+
+CHECK: Disassembly of section .text:
+CHECK: bne   a5, a3, 1014c <main+0x8>
+CHECK: c.bnez  a4, 10164 <main+0x20>
+CHECK: jal   ra, 10144 <main>
+CHECK: c.j   10188 <_start+0x8>

@@ -24,7 +24,8 @@ INSTANTIATE_TEST_SUITE_P(
         DecodeCase{0x0001, "c.nop", "", 2},
         DecodeCase{0x8082, "c.jr", "ra", 2},
         DecodeCase{0x9002, "c.ebreak", "", 2},
-        DecodeCase{0xa001, "c.j", "0", 2}));
+        // Target is absolute (vaddr 0x1000 + offset 0 here), objdump-style.
+        DecodeCase{0xa001, "c.j", "1000", 2}));
 
 TEST(DecoderCompressedTest, LengthDetectionDoesNotConsumeFourBytes) {
   Decoder d(false);

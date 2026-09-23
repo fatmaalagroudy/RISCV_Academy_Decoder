@@ -1,0 +1,5 @@
+2.077615e-01 basic-rv32i.test
+2.090130e-01 basic-rv64i.test
+2.071314e-01 branches.test
+2.247059e-01 compressed.test
+2.076862e-01 real-elf.test

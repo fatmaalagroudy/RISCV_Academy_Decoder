@@ -14,6 +14,12 @@ struct DecodedInstruction {
     std::string mnemonic;      // e.g. "addi", "c.li", "beq"
     std::string operands;      // pre-formatted, e.g. "sp, sp, -16"
     bool valid = false;        // false => illegal/unrecognized encoding
+
+    // Set for jal/branch/compressed jump-branch instructions whose target is
+    // statically known (PC-relative). Not set for jalr/c.jr/c.jalr, whose
+    // target depends on a runtime register value.
+    bool has_target = false;
+    uint64_t target_address = 0;
 };
 
 }  // namespace decoder::decode

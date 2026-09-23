@@ -28,14 +28,16 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(
         DecodeCase{EncU(0x37, 10, 1), "lui", "a0, 0x1"},
         DecodeCase{EncU(0x17, 5, 0), "auipc", "t0, 0x0"},
-        DecodeCase{EncJ(1, 8), "jal", "ra, 8"},
+        // Branch/jal operands are the absolute target address in hex
+        // (vaddr 0x10094 + the encoded offset), matching objdump's style.
+        DecodeCase{EncJ(1, 8), "jal", "ra, 1009c"},
         DecodeCase{EncI(0x67, 0, 0, 1, 0), "jalr", "zero, 0(ra)"},
-        DecodeCase{EncB(10, 11, 0, 8), "beq", "a0, a1, 8"},
-        DecodeCase{EncB(10, 0, 1, 4), "bne", "a0, zero, 4"},
-        DecodeCase{EncB(10, 11, 4, 12), "blt", "a0, a1, 12"},
-        DecodeCase{EncB(10, 11, 5, 12), "bge", "a0, a1, 12"},
-        DecodeCase{EncB(10, 11, 6, 12), "bltu", "a0, a1, 12"},
-        DecodeCase{EncB(10, 11, 7, 12), "bgeu", "a0, a1, 12"},
+        DecodeCase{EncB(10, 11, 0, 8), "beq", "a0, a1, 1009c"},
+        DecodeCase{EncB(10, 0, 1, 4), "bne", "a0, zero, 10098"},
+        DecodeCase{EncB(10, 11, 4, 12), "blt", "a0, a1, 100a0"},
+        DecodeCase{EncB(10, 11, 5, 12), "bge", "a0, a1, 100a0"},
+        DecodeCase{EncB(10, 11, 6, 12), "bltu", "a0, a1, 100a0"},
+        DecodeCase{EncB(10, 11, 7, 12), "bgeu", "a0, a1, 100a0"},
         DecodeCase{EncI(0x03, 10, 0, 2, 0), "lb", "a0, 0(sp)"},
         DecodeCase{EncI(0x03, 10, 1, 2, 2), "lh", "a0, 2(sp)"},
         DecodeCase{EncI(0x03, 10, 2, 2, 4), "lw", "a0, 4(sp)"},
